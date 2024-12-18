@@ -22,13 +22,6 @@
 
 extern IOVIRT_INFO_TABLE *g_iovirt_info_table;
 
-#ifdef TARGET_BM_BOOT
-    // Align the memory access by 8 bytes in case of baremetal boot.
-    static uint64_t bound = 0x08;
-#else
-    static uint64_t bound = 0x01;
-#endif
-
 /**
   @brief   This API is a single point of entry to retrieve
            ITS information stored in the IoVirt Info table
@@ -69,7 +62,7 @@ val_iovirt_get_its_info(
 
   for (i = 0; i < g_iovirt_info_table->num_blocks; i++, block = IOVIRT_NEXT_BLOCK(block))
   {
-      block = ALIGN_MEMORY(block, bound);
+      block = ALIGN_MEMORY_ACCESS(block);
       if (block->type == IOVIRT_NODE_ITS_GROUP) {
           if (type == ITS_GET_GRP_INDEX_FOR_ID) {
               /* Return the ITS Group Index for ITS_ID = param */
