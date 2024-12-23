@@ -4,6 +4,7 @@ on:
   push:
     branches:                # trigger on push to master
       - main
+      - Github_CI
   pull_request:              # trigger on pull requests to master
     branches:
       - main
@@ -49,6 +50,9 @@ jobs:
           export GCC49_AARCH64_PREFIX=/opt/cross/arm-gnu-toolchain-13.2.Rel1-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-
           export PACKAGES_PATH=$PWD/edk2-libc
           source edksetup.sh
+          which gcc
+          gcc --version
+          ld --version
           make -C BaseTools/Source/C
           source ShellPkg/Application/bsa-acs/tools/scripts/acsbuild.sh
       - name: Save Bsa.efi as an artifact
