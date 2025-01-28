@@ -1,0 +1,62 @@
+name: cross-compilation infra
+
+on:
+    push:
+      branches: [ 'GitHub_actions' ]
+    pull_request:
+      branches: [ 'GitHub_actions' ]
+    workflow_dispatch:         # to dispatch manually from Github Actions
+
+jobs:
+  AArch64_build:
+    name: Build
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+          cmake \
+          build-essential \
+          g++-aarch64-linux-gnu \
+          gcc-aarch64-linux-gnu \
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install and cross-compile Boost dependency
+        continue-on-error: true
+        run: |
+          mkdir dep
+          cd dep
+          echo $PWD
+          wget -q https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.gz
+          tar -xf boost_1_86_0.tar.gz
+          cd boost_1_86_0
+          export BOOST_DIR=$PWD
+          ./bootstrap.sh
+          echo "using gcc : aarch64 : aarch64-linux-gnu-g++ ;" > $BOOST_DIR/tools/build/src/user-config.jam
+          cat $BOOST_DIR/tools/build/src/user-config.jam
+          ./b2 toolset=gcc-aarch64 target-os=linux architecture=arm address-model=64 \
+              --with-atomic \
+              --with-chrono \
+              --with-date_time \
+              --with-filesystem \
+              --with-log \
+              --with-program_options \
+              --with-regex \
+              --with-thread \
+              --prefix=output/aarch64 install
+          ls -la output/aarch64/lib
+
+      - name: Build bsa  for AArch64 target
+        run: |
+          export CROSS_COMPILE=/usr/bin/aarch64-linux-gnu-
+          export BOOST_DIR=$PWD/dep/boost_1_86_0/output/aarch64/
+          mkdir build
+          cd build
+          cmake ../ -DCROSS_COMPILE=$CROSS_COMPILE -DBOOST_DIR=$BOOST_DIR
+          make -j$(nproc)
+          cpack -G TGZ
+          ls ./Packaging/
+
